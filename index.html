@@ -34,6 +34,7 @@
   --c-leaders: #A39C8C; --c-cities: #3A3A3A; --c-debt: #8C4A3A; --c-naval: #1F7FA8; --c-islands: #2F9C95; --c-edifice: #9C6B3A;
   --c-progress: #4F9A2F; --c-pantheon: #B8862B; --c-agora: #A0463C;
   --c-houses: #3F6FC4; --c-markets: #D9A514; --c-barracks: #C63A2F; --c-temples: #7D4BB8; --c-gardens: #2E8B57; --c-stones: #7F8790;
+  --c-barwest: #C63A2F; --c-bareast: #9E2F26; --c-market: #D9A514; --c-univ: #2E8B57;
   --font-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
   --font-body: "Figtree", -apple-system, "Segoe UI", Roboto, sans-serif;
 }
@@ -46,6 +47,7 @@
     --c-leaders: #DCD6C8; --c-cities: #9A9A9A; --c-debt: #C47A66; --c-naval: #4AAED8; --c-islands: #52C2BA; --c-edifice: #C9945C;
     --c-progress: #79C255; --c-pantheon: #E0B04F; --c-agora: #D6766A;
     --c-houses: #5B8FE6; --c-markets: #E8B930; --c-barracks: #E2584C; --c-temples: #A178D8; --c-gardens: #4DB57C; --c-stones: #A3ABB5;
+    --c-barwest: #E2584C; --c-bareast: #C9776E; --c-market: #E8B930; --c-univ: #4DB57C;
     color-scheme: dark;
   }
 }
@@ -57,6 +59,7 @@
   --c-leaders: #DCD6C8; --c-cities: #9A9A9A; --c-debt: #C47A66; --c-naval: #4AAED8; --c-islands: #52C2BA; --c-edifice: #C9945C;
   --c-progress: #79C255; --c-pantheon: #E0B04F; --c-agora: #D6766A;
   --c-houses: #5B8FE6; --c-markets: #E8B930; --c-barracks: #E2584C; --c-temples: #A178D8; --c-gardens: #4DB57C; --c-stones: #A3ABB5;
+  --c-barwest: #E2584C; --c-bareast: #C9776E; --c-market: #E8B930; --c-univ: #4DB57C;
   color-scheme: dark;
 }
 
@@ -303,6 +306,7 @@ const MODES = {
   sw: { label: "7 Wonders", max: 7, min: 2, setup: 3 },
   duel: { label: "7 Wonders Duel", max: 2, min: 2, setup: 2 },
   akropolis: { label: "Akropolis", max: 4, min: 2, setup: 2 },
+  dice: { label: "7 Wonders Dice", max: 7, min: 2, setup: 3 },
 };
 
 const SYMS = [
@@ -447,6 +451,27 @@ const TALLY = {
     // Égalité : le plus de pierres l'emporte
     tie: { label: "pierres", value: sc => num(sc.stones) },
   },
+  dice: {
+    // Pas d'extension publiée pour l'instant
+    exts: [],
+    cats: [
+      { key: "wonder", label: "Merveille", unit: "Points", hint: "Points des étapes de merveille construites." },
+      { key: "barwest", label: "Caserne Ouest", unit: "Points", hint: "Points des attaques cochées dans la caserne Ouest (boucliers du voisin déjà déduits)." },
+      { key: "bareast", label: "Caserne Est", unit: "Points", hint: "Points des attaques cochées dans la caserne Est (boucliers du voisin déjà déduits)." },
+      { key: "agora", label: "Agora", unit: "Points", hint: "Points des cases cochées de l'Agora (bleu). Le premier à la terminer gagne 3 points : activez le bonus à droite du nom.",
+        calc: sc => num(sc.agora) + (hasMod(sc, "agoraFirst") ? 3 : 0) },
+      { key: "market", label: "Marché", unit: "Points", hint: "Points du Marché (jaune), cases Merveille comprises." },
+      { key: "univ", label: "Université", unit: "Points", hint: "Points des technologies de l'Université (vert)." },
+      { key: "guild", label: "Guildes", unit: "Points", hint: "Points du Palais des guildes (violet) : chaque guilde compte si vous avez au moins autant de cases cochées que vos deux voisins dans la couleur visée." },
+      { key: "leaders", label: "Leaders", unit: "Points", hint: "Points de la Galerie des leaders (blanc), bonus de galerie complète compris." },
+      { key: "coins", label: "Pièces", unit: "Pièces", hint: "Pièces non dépensées : elles ne rapportent pas de points mais départagent les égalités.", calc: () => 0 },
+    ],
+    mods: [
+      { key: "agoraFirst", cat: "agora", icon: "+3", label: "1er", title: "Premier joueur à terminer l'Agora : +3 points" },
+    ],
+    // Égalité : le plus de pièces non dépensées l'emporte
+    tie: { label: "pièces", value: sc => num(sc.coins) },
+  },
 };
 const isTally = () => !!TALLY[store.mode];
 const G = () => TALLY[store.mode];
@@ -513,6 +538,18 @@ function akropolisExample() {
     example: true,
   };
 }
+function diceExample() {
+  return {
+    players: EX_PLAYERS(),
+    scores: {
+      a: { wonder: "7", barwest: "18", bareast: "0", agora: "17", market: "14", univ: "3", guild: "0", leaders: "12", coins: "4" },
+      b: { wonder: "10", barwest: "6", bareast: "9", agora: "12", market: "8", univ: "11", guild: "8", leaders: "4", coins: "2", mods: { agoraFirst: true } },
+      c: { wonder: "4", barwest: "12", bareast: "11", agora: "9", market: "10", univ: "6", guild: "12", leaders: "8", coins: "6" },
+    },
+    instant: null,
+    example: true,
+  };
+}
 function freshStore() {
   return {
     mode: "simple",
@@ -520,6 +557,7 @@ function freshStore() {
     sw: { state: swExample(), cat: "mil", ext: {} },
     duel: { state: duelExample(), cat: "civil", ext: {} },
     akropolis: { state: akropolisExample(), cat: "houses", ext: {} },
+    dice: { state: diceExample(), cat: "wonder", ext: {} },
     archive: [],
   };
 }
@@ -585,7 +623,7 @@ function renderHeader() {
     if (s.gameName) sub = `${esc(s.gameName)} · ${sub}`;
   }
   // « Feuille de score » en tête, puis les jeux par ordre alphabétique (les noms qui commencent par un chiffre à la fin)
-  const sortKey = label => (/^\d/.test(label) ? "￿" : "") + label;
+  const sortKey = label => (/^\d/.test(label) ? "\uffff" : "") + label;
   const games = Object.entries(MODES).filter(([k]) => k !== "simple")
     .sort(([, a], [, b]) => sortKey(a.label).localeCompare(sortKey(b.label), "fr", { sensitivity: "base", numeric: true }));
   const options = [["simple", MODES.simple], ...games].map(([k, m]) => `<option value="${k}" ${k === store.mode ? "selected" : ""}>${esc(m.label)}</option>`).join("");

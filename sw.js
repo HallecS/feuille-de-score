@@ -1,5 +1,5 @@
 // Hors connexion : l'appli est gardee en cache, et mise a jour des qu'une nouvelle version est en ligne
-const CACHE = "feuille-de-score-20261031-143504";
+const CACHE = "feuille-de-score-20261031-145119";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
